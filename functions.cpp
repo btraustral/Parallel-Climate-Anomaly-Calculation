@@ -120,34 +120,45 @@ int calculateDroughtCode(PointData *data, double *days) {
     int invalid, totalInvalid = 0;
     float prevDroughtCode = 0;
     float efRainfall, moisture, prevMoisture, evapotranspiration;
+    float rainfallMm, temperatureC;
 
     data->drought_code[0] = 0.0f;
     for (i = 1; i < TIME; i++) {
         invalid = 0;
 
-        if (data->part_prec_val[i] < 0.0 || data->part_prec_val[i] > 300.0) {
+        // The cleaned NetCDF files retain packed E-OBS values: 0.1 mm and 0.01 C.
+        rainfallMm = data->part_prec_val[i] * 0.1f;
+        temperatureC = data->part_tg_val[i] * 0.01f;
+
+        if (rainfallMm < 0.0f || rainfallMm > 300.0f) {
             data->part_prec_val[i] = 0;
+            rainfallMm = 0.0f;
             invalid = 1;
         }
 
-        if (data->part_tg_val[i] < -8000 || data->part_tg_val[i] > 8000) {
+        if (temperatureC < -80.0f || temperatureC > 80.0f) {
             data->part_tg_val[i] = 1040;
+            temperatureC = 10.4f;
             invalid = 1;
         }
 
         if (invalid) totalInvalid++;
 
-        if (data->part_prec_val[i] > 2.8) {
-            efRainfall = 0.86 * data->part_prec_val[i] - 1.27;
-            prevMoisture = 800 * expf(-prevDroughtCode / 400.0);
+        if (rainfallMm > 2.8f) {
+            efRainfall = 0.83f * rainfallMm - 1.27f;
+            prevMoisture = 800.0f * expf(-prevDroughtCode / 400.0f);
             moisture = prevMoisture + 3.937 * efRainfall;
-            prevDroughtCode = 400 * log(800.0 / moisture);
-            if (prevDroughtCode < 0) prevDroughtCode = 0;
+            prevDroughtCode = 400.0f * logf(800.0f / moisture);
+            if (prevDroughtCode < 0.0f) prevDroughtCode = 0.0f;
         }
 
-        evapotranspiration = 0.36 * (data->part_tg_val[i] + 2.0) + getDayLength(days[i]);
-        if (evapotranspiration < 0) evapotranspiration = 0;
-        data->drought_code[i] = prevDroughtCode + 0.5 * evapotranspiration;
+        if (temperatureC > -2.8f) {
+            evapotranspiration = 0.36f * (temperatureC + 2.8f) + getDayLength(days[i]);
+        } else {
+            evapotranspiration = getDayLength(days[i]);
+        }
+        if (evapotranspiration < 0.0f) evapotranspiration = 0.0f;
+        data->drought_code[i] = prevDroughtCode + 0.5f * evapotranspiration;
         prevDroughtCode = data->drought_code[i];
     }
 
