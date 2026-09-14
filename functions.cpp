@@ -397,7 +397,7 @@ double getDayLength(double day){
 }
 
 int encontrarPercentilShort(short *percentiles, short valor) {
-    int left = 0, right = 97, result = 98;
+    int left = 0, right = 97, result = 99;
     while (left <= right) {
         int mid = (left + right) / 2;
         if (valor <= percentiles[mid]) {
@@ -411,7 +411,7 @@ int encontrarPercentilShort(short *percentiles, short valor) {
 }
 
 int encontrarPercentilFloat(float *percentiles, float valor) {
-    int left = 0, right = 97, result = 98;
+    int left = 0, right = 97, result = 99;
     while (left <= right) {
         int mid = (left + right) / 2;
         float diff = valor - percentiles[mid];
